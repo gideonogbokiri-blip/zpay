@@ -44,4 +44,7 @@ example
 /ios
 /android
 
+# Vercel
 .vercel
+.env.vercel
+.env.local
