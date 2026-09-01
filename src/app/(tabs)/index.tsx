@@ -5,14 +5,13 @@ import { Icon } from '@/components/Icon';
 import { ServiceButton } from '@/components/ServiceButton';
 import { TransactionRow } from '@/components/TransactionRow';
 import { WalletCard } from '@/components/WalletCard';
-import { ZpayMark } from '@/components/ZpayMark';
 import { Screen, Text } from '@/components/ui';
 import { ACTIVE_SERVICES, SERVICE_META, SERVICE_NAMES } from '@/constants/services';
 import { useNotifications, useServices, useTransactions, useWallet } from '@/hooks/queries';
 import { useAuth } from '@/hooks/use-auth';
 import { formatNaira } from '@/lib/format';
 import { useTheme } from '@/theme';
-import { IconSize, Radii, Spacing } from '@/theme/tokens';
+import { IconSize, Radii, Shadow, Spacing } from '@/theme/tokens';
 
 export default function HomeScreen() {
   const colors = useTheme();
@@ -26,19 +25,25 @@ export default function HomeScreen() {
   const { data: notifications } = useNotifications();
   const unreadCount = notifications?.filter((n) => !n.readAt).length ?? 0;
 
+  const firstName = user?.fullName ? user.fullName.split(' ')[0] : 'there';
+
   return (
     <Screen title={undefined} scroll>
       <View style={styles.header}>
         <View style={styles.brandBlock}>
           <View style={styles.brandRow}>
-            <ZpayMark size={34} />
-            <Text variant="title" style={styles.brand}>
-              ZPAY
-            </Text>
+            <View style={[styles.mark, { backgroundColor: colors.accent }]}>
+              <Icon name="card" size={IconSize.sm} color={colors.background} />
+            </View>
+            <View>
+              <Text variant="smallBold" style={styles.brand}>
+                ZPAY
+              </Text>
+              <Text variant="caption" color="textMuted">
+                Personal • NGN
+              </Text>
+            </View>
           </View>
-          <Text variant="caption" color="textMuted">
-            {user?.fullName ? `Hi, ${user.fullName.split(' ')[0]}` : 'Welcome back'}
-          </Text>
         </View>
         <View style={styles.headerActions}>
           <Link href="/notifications" asChild>
@@ -55,24 +60,31 @@ export default function HomeScreen() {
               accessibilityRole="button"
               accessibilityLabel="Profile"
               style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}>
-              <Icon name="person" size={IconSize.md} color={colors.accent} />
+              <Text variant="smallBold" style={styles.avatarText}>
+                {firstName[0]?.toUpperCase() ?? 'U'}
+              </Text>
             </Pressable>
           </Link>
         </View>
       </View>
 
-      <View style={styles.heroPanel}>
-        <View style={styles.heroBadge}>
-          <Text variant="smallBold" color="textSecondary">
-            Smart spending
+      <View style={styles.greeting}>
+        <View style={styles.greetingLeft}>
+          <Text variant="title" style={styles.greetingText}>
+            Hi, {firstName}
+          </Text>
+          <Text variant="small" color="textMuted">
+            Make today count
           </Text>
         </View>
-        <Text variant="heading" style={styles.heroTitle}>
-          Your money, in motion.
-        </Text>
-        <Text variant="small" color="textMuted">
-          Track bills, move funds, and stay ahead of every payment.
-        </Text>
+        <View style={styles.greetingRight}>
+          <View style={styles.starPill}>
+            <Icon name="sparkles" size={IconSize.sm} color="#FFB020" />
+            <Text variant="caption" color="textSecondary" style={styles.starText}>
+              Smart spending
+            </Text>
+          </View>
+        </View>
       </View>
 
       <WalletCard
@@ -82,10 +94,18 @@ export default function HomeScreen() {
         onHistoryPress={() => router.push('/history')}
         onPress={() => router.push('/wallet/fund')}
       />
+      {wallet && !walletLoading ? (
+        <View style={styles.balanceNote}>
+          <Icon name="wallet-outline" size={IconSize.sm} color={colors.textMuted} />
+          <Text variant="caption" color="textMuted">
+            Available balance {formatNaira(wallet.balance)}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text variant="title">Quick services</Text>
+          <Text variant="title">Services</Text>
           <Link href="/service" asChild>
             <Pressable accessibilityRole="button">
               <Text variant="smallBold" color="accent">
@@ -120,11 +140,14 @@ export default function HomeScreen() {
           </Link>
         </View>
         {recent.length === 0 ? (
-          <Text variant="small" color="textMuted" style={styles.empty}>
-            No transactions yet. Pay a bill to get started.
-          </Text>
+          <View style={[styles.emptyCard, Shadow]}>
+            <Icon name="receipt-outline" size={IconSize.xl} color={colors.textMuted} />
+            <Text variant="small" color="textMuted" style={styles.emptyText}>
+              No transactions yet. Pay a bill to get started.
+            </Text>
+          </View>
         ) : (
-          <View style={styles.list}>
+          <View style={[styles.card, Shadow]}>
             {recent.map((tx) => (
               <TransactionRow
                 key={tx.id}
@@ -134,12 +157,6 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
-      </View>
-
-      <View style={styles.placeholderNote}>
-        <Text variant="caption" color="textMuted">
-          {wallet ? `Available balance ${formatNaira(wallet.balance)}` : ' '}
-        </Text>
       </View>
     </Screen>
   );
@@ -161,8 +178,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.sm,
   },
+  mark: {
+    width: 34,
+    height: 34,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#00F4FE',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+  },
   brand: {
     letterSpacing: 2,
+    fontSize: 15,
   },
   headerActions: {
     flexDirection: 'row',
@@ -190,38 +219,55 @@ const styles = StyleSheet.create({
     width: IconSize.xxl,
     height: IconSize.xxl,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(0,244,254,0.12)',
+    backgroundColor: 'rgba(0,244,254,0.16)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,254,0.4)',
+  },
+  avatarText: {
+    color: '#8FF7FF',
   },
   pressed: {
     opacity: 0.7,
   },
-  heroPanel: {
-    gap: Spacing.sm,
-    paddingVertical: Spacing.lg,
-    paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 8 },
+  greeting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
   },
-  heroBadge: {
-    alignSelf: 'flex-start',
+  greetingLeft: {
+    gap: Spacing.xxs,
+  },
+  greetingText: {
+    fontSize: 24,
+    letterSpacing: -0.4,
+  },
+  greetingRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  starPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    paddingVertical: Spacing.sm,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(0,244,254,0.08)',
+    backgroundColor: 'rgba(255,176,32,0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,176,32,0.25)',
   },
-  heroTitle: {
-    maxWidth: 250,
-    lineHeight: 34,
-    letterSpacing: -0.5,
+  starText: {
+    fontWeight: '600',
+  },
+  balanceNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   section: {
     marginTop: Spacing.xxl,
@@ -239,15 +285,25 @@ const styles = StyleSheet.create({
     columnGap: Spacing.md,
     justifyContent: 'space-between',
   },
-  list: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+  card: {
+    borderRadius: 24,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  empty: {
-    paddingVertical: Spacing.md,
-  },
-  placeholderNote: {
-    marginTop: Spacing.xl,
+  emptyCard: {
+    borderRadius: 24,
+    padding: Spacing.xxl,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  emptyText: {
+    textAlign: 'center',
   },
 });

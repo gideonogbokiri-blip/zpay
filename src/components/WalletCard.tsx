@@ -2,8 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { Icon } from '@/components/Icon';
 import { formatNaira } from '@/lib/format';
-import { useTheme } from '@/theme';
-import { IconSize, Radii, Shadow, Spacing } from '@/theme/tokens';
+import { IconSize, Radii, Spacing } from '@/theme/tokens';
 import { Card, Text, View } from './ui';
 
 export interface WalletCardProps {
@@ -21,24 +20,28 @@ export function WalletCard({
   onHistoryPress,
   onPress,
 }: WalletCardProps) {
-  const colors = useTheme();
-
   return (
-    <Card elevated style={[styles.card, { backgroundColor: '#0b173f', borderColor: 'rgba(154,185,255,0.18)' }, Shadow]}>
+    <Card
+      elevated
+      style={[styles.card, { backgroundColor: '#081027', borderColor: 'rgba(154,185,255,0.22)' }]}>
       <View style={styles.glowOne} />
       <View style={styles.glowTwo} />
-      <View style={styles.shimmer} />
+      <View style={styles.glowThree} />
+      <View style={styles.sheen} />
+      <View style={styles.innerBorder} />
 
       <View style={styles.topRow}>
         <View style={styles.miniBrand}>
           <View style={styles.miniDot} />
-          <Text variant="smallBold" color="textSecondary">
+          <Text variant="smallBold" style={styles.brandText}>
             ZPAY
           </Text>
         </View>
-        <Text variant="caption" color="textMuted">
-          NGN
-        </Text>
+        <View style={styles.currencyPill}>
+          <Text variant="caption" style={styles.currencyText}>
+            NGN
+          </Text>
+        </View>
       </View>
 
       <Pressable
@@ -47,20 +50,20 @@ export function WalletCard({
         accessibilityRole={onPress ? 'button' : undefined}
         accessibilityLabel="Wallet balance"
         style={({ pressed }) => [styles.balanceWrap, pressed && styles.balancePressed]}>
-        <Text variant="caption" color="textMuted">
+        <Text variant="caption" style={styles.balanceLabel}>
           Available balance
         </Text>
         {loading ? (
-          <Text variant="amount" color="textMuted">
-            ------
+          <Text variant="amount" style={styles.balanceLoading}>
+            ₦------.--
           </Text>
         ) : (
           <Text variant="amount" style={styles.balanceAmount}>
             {formatNaira(balance)}
           </Text>
         )}
-        <Text variant="caption" color="textMuted">
-          Tap to add money and review funding options.
+        <Text variant="caption" style={styles.balanceHint}>
+          Tap to fund your wallet
         </Text>
       </Pressable>
 
@@ -69,9 +72,9 @@ export function WalletCard({
           onPress={onFundPress}
           accessibilityRole="button"
           accessibilityLabel="Fund wallet"
-          style={({ pressed }) => [styles.actionButton, { backgroundColor: 'rgba(255,255,255,0.12)' }, pressed && styles.pressed]}>
-          <Icon name="add-circle-outline" size={IconSize.sm} color={colors.textSecondary} />
-          <Text variant="smallBold" color="textSecondary">
+          style={({ pressed }) => [styles.actionButton, styles.actionPrimary, pressed && styles.pressed]}>
+          <Icon name="add-circle" size={IconSize.sm} color="#081027" />
+          <Text variant="smallBold" style={styles.actionPrimaryText}>
             Deposit
           </Text>
         </Pressable>
@@ -80,29 +83,29 @@ export function WalletCard({
           onPress={onHistoryPress}
           accessibilityRole="button"
           accessibilityLabel="View transaction history"
-          style={({ pressed }) => [styles.actionButton, { backgroundColor: 'rgba(0,244,254,0.22)' }, pressed && styles.pressed]}>
-          <Icon name="receipt-outline" size={IconSize.sm} color={colors.textSecondary} />
-          <Text variant="smallBold" color="textSecondary">
+          style={({ pressed }) => [styles.actionButton, styles.actionGhost, pressed && styles.pressed]}>
+          <Icon name="receipt-outline" size={IconSize.sm} color="#EAF6FF" />
+          <Text variant="smallBold" style={styles.actionGhostText}>
             History
           </Text>
         </Pressable>
       </View>
 
       <View style={styles.metaRow}>
-        <View style={styles.metaChip}>
-          <Text variant="caption" color="textSecondary">
+        <View style={[styles.metaChip, { borderColor: 'rgba(0,244,254,0.35)' }]}>
+          <Text variant="caption" style={styles.metaLabel}>
             Currency
           </Text>
-          <Text variant="smallBold" style={{ color: '#8FF7FF' }}>
-            NGN
+          <Text variant="smallBold" style={styles.metaValueAccent}>
+            Nigerian Naira
           </Text>
         </View>
 
-        <View style={styles.metaChip}>
-          <Text variant="caption" color="textSecondary">
+        <View style={[styles.metaChip, { borderColor: 'rgba(46,204,113,0.35)' }]}>
+          <Text variant="caption" style={styles.metaLabel}>
             Wallet status
           </Text>
-          <Text variant="smallBold" style={{ color: colors.text }}>
+          <Text variant="smallBold" style={styles.metaValue}>
             Active
           </Text>
         </View>
@@ -113,9 +116,9 @@ export function WalletCard({
 
 const styles = StyleSheet.create({
   card: {
-    gap: Spacing.md,
+    gap: Spacing.lg,
     padding: Spacing.xl,
-    borderRadius: 30,
+    borderRadius: 28,
     overflow: 'hidden',
     position: 'relative',
     borderWidth: 1,
@@ -124,26 +127,49 @@ const styles = StyleSheet.create({
   },
   glowOne: {
     position: 'absolute',
-    top: -34,
-    right: -40,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: 'rgba(124, 92, 255, 0.45)',
+    top: -60,
+    right: -50,
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    backgroundColor: 'rgba(124, 92, 255, 0.55)',
   },
   glowTwo: {
     position: 'absolute',
-    left: -30,
-    bottom: -42,
-    width: 170,
-    height: 170,
-    borderRadius: 85,
-    backgroundColor: 'rgba(0, 244, 254, 0.18)',
+    left: -40,
+    bottom: -50,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
+    backgroundColor: 'rgba(0, 244, 254, 0.22)',
   },
-  shimmer: {
+  glowThree: {
     position: 'absolute',
-    inset: 0,
+    top: '38%',
+    right: '28%',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 122, 212, 0.16)',
+  },
+  sheen: {
+    position: 'absolute',
+    top: -60,
+    left: -80,
+    width: 220,
+    height: 420,
     backgroundColor: 'rgba(255,255,255,0.06)',
+    transform: [{ rotate: '18deg' }],
+  },
+  innerBorder: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    bottom: 8,
+    borderWidth: 1,
+    borderRadius: 21,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   topRow: {
     flexDirection: 'row',
@@ -154,13 +180,35 @@ const styles = StyleSheet.create({
   miniBrand: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
   miniDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#6AF7FF',
+    shadowColor: '#6AF7FF',
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  brandText: {
+    color: '#EAF6FF',
+    letterSpacing: 2.4,
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  currencyPill: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radii.full,
+    backgroundColor: 'rgba(0,244,254,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,244,254,0.3)',
+  },
+  currencyText: {
+    color: '#8FF7FF',
+    fontWeight: '700',
   },
   balanceWrap: {
     gap: Spacing.xs,
@@ -170,11 +218,22 @@ const styles = StyleSheet.create({
   balancePressed: {
     opacity: 0.82,
   },
+  balanceLabel: {
+    color: 'rgba(234,246,255,0.7)',
+    letterSpacing: 0.6,
+  },
+  balanceHint: {
+    color: 'rgba(234,246,255,0.55)',
+  },
   balanceAmount: {
     color: '#F5FBFF',
-    fontSize: 36,
-    lineHeight: 44,
+    fontSize: 34,
+    lineHeight: 42,
     fontWeight: '700',
+    fontFamily: 'System',
+  },
+  balanceLoading: {
+    color: 'rgba(234,246,255,0.4)',
   },
   quickActions: {
     flexDirection: 'row',
@@ -190,9 +249,22 @@ const styles = StyleSheet.create({
     borderRadius: Radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
+  },
+  actionPrimary: {
+    backgroundColor: '#8FF7FF',
+  },
+  actionPrimaryText: {
+    color: '#081027',
+    fontWeight: '700',
+  },
+  actionGhost: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.16)',
+  },
+  actionGhostText: {
+    color: '#EAF6FF',
   },
   metaRow: {
     flexDirection: 'row',
@@ -201,14 +273,24 @@ const styles = StyleSheet.create({
   },
   metaChip: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 16,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    gap: Spacing.xxs,
+  },
+  metaLabel: {
+    color: 'rgba(234,246,255,0.55)',
+  },
+  metaValue: {
+    color: '#EAF6FF',
+  },
+  metaValueAccent: {
+    color: '#8FF7FF',
   },
   pressed: {
-    opacity: 0.78,
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
 });

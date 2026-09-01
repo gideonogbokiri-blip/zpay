@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { IconSize, Radii, Shadow, Spacing, TouchTarget } from '@/theme/tokens';
+import { IconSize, Shadow, Spacing, TouchTarget } from '@/theme/tokens';
 import { Icon, type IconName } from './Icon';
 import { Text } from './ui';
 
