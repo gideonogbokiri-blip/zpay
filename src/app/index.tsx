@@ -4,7 +4,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { useAuth } from '@/hooks/use-auth';
 import { useTheme } from '@/theme';
 
-export default function Index() {
+export default function RootIndex() {
   const { status } = useAuth();
   const colors = useTheme();
 

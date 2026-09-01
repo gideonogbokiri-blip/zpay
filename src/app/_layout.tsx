@@ -1,18 +1,32 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 import { ThemeProvider, useTheme } from '@/theme';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
 
 function RootNavigator() {
+  const { status } = useAuth();
   const colors = useTheme();
+
+  if (status === 'loading') {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
+    );
+  }
+
   return (
     <Stack
+      initialRouteName={status === 'signedIn' ? '(tabs)' : '(auth)'}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: colors.background },
       }}>
+      <Stack.Screen name="index" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="wallet/fund" options={{ animation: 'slide_from_right' }} />

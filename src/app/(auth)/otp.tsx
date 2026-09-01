@@ -46,7 +46,7 @@ export default function OtpScreen() {
         title: 'OTP verification login',
         detail: session.user.phone,
       });
-      router.replace(session.user.pinSet ? '/' : '/pin-setup');
+      router.replace(session.user.pinSet ? '/(tabs)' : '/pin-setup');
     } catch (e) {
       setError(normalizeError(e).message);
     } finally {

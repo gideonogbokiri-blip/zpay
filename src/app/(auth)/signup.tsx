@@ -10,99 +10,46 @@ import { authApi, normalizeError } from '@/lib/api';
 import { useSecurityPreferences } from '@/state/security';
 import { Spacing } from '@/theme/tokens';
 import { z } from 'zod';
-import { isValidOtp } from '@/lib/validation/auth';
 
-const phoneSchema = z.object({
-  fullName: z.string().trim().min(2, 'Enter your full name'),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^(\+?234|0)[789][01]\d{8}$/, 'Enter a valid Nigerian phone number'),
-});
+const signupSchema = z
+  .object({
+    fullName: z.string().trim().min(2, 'Enter your full name'),
+    phone: z.string().trim().regex(/^(\+?234|0)[789][01]\d{8}$/, 'Enter a valid Nigerian phone number'),
+    email: z.string().trim().email('Enter a valid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((value) => value.password === value.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
 
-type PhoneFormValues = z.infer<typeof phoneSchema>;
-
-type Step = 'phone' | 'otp';
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupScreen() {
   const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
-  const [step, setStep] = useState<Step>('phone');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [verificationId, setVerificationId] = useState<string | null>(null);
-  const [otp, setOtp] = useState('');
-  const [phone, setPhone] = useState('');
-  const [seconds, setSeconds] = useState(30);
 
   const {
     control,
     handleSubmit,
-  } = useForm<PhoneFormValues>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { fullName: '', phone: '' },
+  } = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: { fullName: '', phone: '', email: '', password: '', confirmPassword: '' },
   });
 
-  const startTimer = () => {
-    setSeconds(30);
-    const interval = setInterval(() => {
-      setSeconds((s) => {
-        if (s <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-  };
-
-  const onRequestOtp = async (values: PhoneFormValues) => {
+  const onSubmit = async (values: SignupFormValues) => {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await authApi.signup({
+      const { verificationId } = await authApi.signup({
         fullName: values.fullName,
         phone: values.phone,
-        email: `${values.phone}@zpay.user`,
-        password: 'zpay-phone-signup',
+        email: values.email,
+        password: values.password,
       });
-      setVerificationId(result.verificationId);
-      setPhone(values.phone);
-      setStep('otp');
-      startTimer();
-    } catch (e) {
-      setError(normalizeError(e).message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const onVerifyOtp = async () => {
-    if (!verificationId || !isValidOtp(otp)) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const session = await authApi.verifyOtp({ verificationId, code: otp });
-      recordSecurityEvent({
-        type: 'otp_login',
-        title: 'Signup verified',
-        detail: session.user.phone,
-      });
-      router.replace('/pin-setup');
-    } catch (e) {
-      setError(normalizeError(e).message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const onResend = async () => {
-    if (!verificationId) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      await authApi.resendOtp(verificationId);
-      setOtp('');
-      startTimer();
+      router.push({ pathname: '/otp', params: { verificationId } });
     } catch (e) {
       setError(normalizeError(e).message);
     } finally {
@@ -122,130 +69,97 @@ export default function SignupScreen() {
         </Text>
       </View>
 
-      {step === 'phone' ? (
-        <View style={styles.form}>
-          <Text variant="title" style={styles.formTitle}>
-            Sign up
-          </Text>
-          <Text variant="small" color="textSecondary" style={styles.formSubtitle}>
-            Enter your details to get started
-          </Text>
-          <InlineError message={error} />
-          <Controller
-            control={control}
-            name="fullName"
-            render={({ field }) => (
-              <Input
-                label="Full name"
-                placeholder="Ada Obi"
-                autoCapitalize="words"
-                textContentType="name"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field }) => (
-              <Input
-                label="Phone number"
-                placeholder="0801 234 5678"
-                keyboardType="phone-pad"
-                textContentType="telephoneNumber"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-              />
-            )}
-          />
-          <Button
-            label="Create account"
-            loading={submitting}
-            disabled={submitting}
-            onPress={handleSubmit(onRequestOtp)}
-          />
-        </View>
-      ) : (
-        <View style={styles.form}>
-          <Text variant="title" style={styles.formTitle}>
-            Verify your number
-          </Text>
-          <Text variant="small" color="textSecondary" style={styles.formSubtitle}>
-            Enter the 6-digit code sent to {phone}
-          </Text>
-          <InlineError message={error} />
-          <View style={styles.otpRow}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.otpBox,
-                  {
-                    borderColor:
-                      otp.length === i
-                        ? '#00e5ff'
-                        : otp.length > i
-                          ? 'rgba(0,229,255,0.4)'
-                          : 'rgba(255,255,255,0.1)',
-                    backgroundColor: otp.length > i ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.04)',
-                  },
-                ]}>
-                <Text variant="title" style={{ color: otp.length > i ? '#ffffff' : 'rgba(255,255,255,0.3)' }}>
-                  {otp[i] || ''}
-                </Text>
-              </View>
-            ))}
-          </View>
-          <View style={styles.otpInputRow}>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <View key={i} style={styles.otpInputWrapper}>
-                <Input
-                  value={otp[i] || ''}
-                  onChangeText={(text) => {
-                    const digit = text.replace(/\D/g, '').slice(-1);
-                    const newOtp = otp.split('');
-                    newOtp[i] = digit;
-                    setOtp(newOtp.join('').slice(0, 6));
-                  }}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  style={styles.otpHiddenInput}
-                />
-              </View>
-            ))}
-          </View>
-          <Button
-            label="Verify"
-            loading={submitting}
-            disabled={submitting || !isValidOtp(otp)}
-            onPress={onVerifyOtp}
-          />
-          {seconds > 0 ? (
-            <Text variant="small" color="textSecondary" style={styles.resendText}>
-              Resend code in {seconds}s
-            </Text>
-          ) : (
-            <Button
-              label="Resend code"
-              variant="ghost"
-              loading={submitting}
-              onPress={onResend}
+      <View style={styles.form}>
+        <Text variant="title" style={styles.formTitle}>
+          Sign up
+        </Text>
+        <Text variant="small" color="textSecondary" style={styles.formSubtitle}>
+          Enter your details to get started
+        </Text>
+        <InlineError message={error} />
+        <Controller
+          control={control}
+          name="fullName"
+          render={({ field }) => (
+            <Input
+              label="Full name"
+              placeholder="Ada Obi"
+              autoCapitalize="words"
+              textContentType="name"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
             />
           )}
-          <Button
-            label="Change number"
-            variant="ghost"
-            onPress={() => {
-              setStep('phone');
-              setOtp('');
-              setError(null);
-            }}
-          />
-        </View>
-      )}
+        />
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field }) => (
+            <Input
+              label="Phone number"
+              placeholder="0801 234 5678"
+              keyboardType="phone-pad"
+              textContentType="telephoneNumber"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="email"
+          render={({ field }) => (
+            <Input
+              label="Email address"
+              placeholder="you@example.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field }) => (
+            <Input
+              label="Password"
+              placeholder="At least 6 characters"
+              secureTextEntry
+              textContentType="newPassword"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <Input
+              label="Confirm password"
+              placeholder="Repeat your password"
+              secureTextEntry
+              textContentType="newPassword"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+            />
+          )}
+        />
+        <Button
+          label="Create account"
+          loading={submitting}
+          disabled={submitting}
+          onPress={handleSubmit(onSubmit)}
+        />
+      </View>
 
       <View style={styles.footer}>
         <Text variant="small" color="textSecondary">
@@ -287,46 +201,6 @@ const styles = StyleSheet.create({
   },
   formSubtitle: {
     marginBottom: Spacing.sm,
-  },
-  otpRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: Spacing.md,
-  },
-  otpBox: {
-    width: 48,
-    height: 56,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  otpInputRow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 56,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 10,
-    opacity: 0,
-  },
-  otpInputWrapper: {
-    width: 48,
-    height: 56,
-  },
-  otpHiddenInput: {
-    width: 48,
-    height: 56,
-    textAlign: 'center',
-    fontSize: 24,
-    padding: 0,
-  },
-  resendText: {
-    textAlign: 'center',
-    marginTop: Spacing.sm,
   },
   footer: {
     alignItems: 'center',

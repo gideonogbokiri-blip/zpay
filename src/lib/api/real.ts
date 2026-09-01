@@ -138,4 +138,8 @@ export const realAuthApi = {
   async getMe(token: string): Promise<User> {
     return http.get<User>('/auth/me', token);
   },
+
+  async updateAvatar(token: string, avatarUrl: string): Promise<{ user: User }> {
+    return http.post<{ user: User }>('/auth/avatar', { avatarUrl }, token);
+  },
 };
