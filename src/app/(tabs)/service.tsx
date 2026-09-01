@@ -17,7 +17,7 @@ export default function ServiceScreen() {
   const serviceOrder = services?.map((s) => s.type) ?? ACTIVE_SERVICES;
 
   return (
-    <Screen variant="light" title={undefined} scroll>
+    <Screen title={undefined} scroll>
       <View style={styles.header}>
         <Text variant="title" style={styles.brand}>
           ZPAY
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     width: IconSize.xxl,
     height: IconSize.xxl,
     borderRadius: Radii.full,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF453A',
+    backgroundColor: '#ff4d6a',
   },
   pressed: {
     opacity: 0.7,
