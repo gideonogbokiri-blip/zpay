@@ -38,33 +38,32 @@ const signupPayload = {
 };
 
 describe('LoginScreen', () => {
-  it('shows field errors on empty submit', async () => {
+  it('shows the phone input and continue button', async () => {
     const screen = await render(<LoginScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'Log in' }));
-    expect(await screen.findByText('Enter your phone number or email')).toBeTruthy();
-    expect(await screen.findByText('Enter your password')).toBeTruthy();
+    expect(await screen.findByText('Get started')).toBeTruthy();
+    expect(screen.getByPlaceholderText('0801 234 5678')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
   }, 15000);
 
-  it('signs in and navigates to pin-setup for a fresh account', async () => {
-    const { verificationId } = await authApi.signup(signupPayload);
-    await authApi.verifyOtp({ verificationId, code: __getMockOtpCode(verificationId)! });
+  it('requests OTP and navigates to verification for an existing account', async () => {
+    await authApi.signup(signupPayload);
 
     const screen = await render(<LoginScreen />);
     await fireEvent.changeText(screen.getByPlaceholderText('0801 234 5678'), '08012345678');
-    await fireEvent.changeText(screen.getByPlaceholderText('Your password'), 'secret1');
-    await fireEvent.press(screen.getByRole('button', { name: 'Log in' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
-    await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/pin-setup'));
-  });
+    await waitFor(() => {
+      expect(screen.getByText('Verify your number')).toBeTruthy();
+    });
+  }, 15000);
 
-  it('shows an error for wrong credentials', async () => {
+  it('shows an error for unregistered phone number', async () => {
     const screen = await render(<LoginScreen />);
-    await fireEvent.changeText(screen.getByPlaceholderText('0801 234 5678'), '08012345678');
-    await fireEvent.changeText(screen.getByPlaceholderText('Your password'), 'wrong-password');
-    await fireEvent.press(screen.getByRole('button', { name: 'Log in' }));
+    await fireEvent.changeText(screen.getByPlaceholderText('0801 234 5678'), '08099999999');
+    await fireEvent.press(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(await screen.findByText('Incorrect phone/email or password.')).toBeTruthy();
-  });
+    expect(await screen.findByText('No account found with this phone number. Please sign up first.')).toBeTruthy();
+  }, 15000);
 });
 
 describe('OtpScreen', () => {

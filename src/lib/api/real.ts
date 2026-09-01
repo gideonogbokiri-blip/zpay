@@ -131,6 +131,10 @@ export const realAuthApi = {
     return http.post<{ user: User }>('/auth/create-pin', payload, token);
   },
 
+  async requestOtp(phone: string): Promise<{ verificationId: string }> {
+    return http.post<{ verificationId: string }>('/auth/request-otp', { phone });
+  },
+
   async getMe(token: string): Promise<User> {
     return http.get<User>('/auth/me', token);
   },

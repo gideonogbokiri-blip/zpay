@@ -155,6 +155,26 @@ export const mockAuthApi = {
     await delay(400);
     return requireUser(token);
   },
+
+  async requestOtp(phone: string): Promise<{ verificationId: string }> {
+    await delay(800);
+    const record = [...users.values()].find((r) => r.user.phone === phone);
+    if (!record) {
+      throw new ApiError(
+        { code: 'ACCOUNT_NOT_FOUND', message: 'No account found with this phone number. Please sign up first.', retryable: false },
+        'validation'
+      );
+    }
+    const verificationId = generateId();
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    pendingVerifications.set(verificationId, {
+      phone,
+      email: record.user.email,
+      code,
+    });
+    logOtp(phone, code);
+    return { verificationId };
+  },
 };
 
 function mockUser(payload: SignupPayload): User {

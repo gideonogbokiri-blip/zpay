@@ -4,41 +4,105 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { StyleSheet } from 'react-native';
 
+import { ZpayMark } from '@/components/ZpayMark';
 import { Button, InlineError, Input, Screen, Text, View } from '@/components/ui';
 import { authApi, normalizeError } from '@/lib/api';
-import { signupSchema, type SignupFormValues } from '@/lib/validation/auth';
+import { useSecurityPreferences } from '@/state/security';
 import { Spacing } from '@/theme/tokens';
+import { z } from 'zod';
+import { isValidOtp } from '@/lib/validation/auth';
+
+const phoneSchema = z.object({
+  fullName: z.string().trim().min(2, 'Enter your full name'),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^(\+?234|0)[789][01]\d{8}$/, 'Enter a valid Nigerian phone number'),
+});
+
+type PhoneFormValues = z.infer<typeof phoneSchema>;
+
+type Step = 'phone' | 'otp';
 
 export default function SignupScreen() {
+  const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
+  const [step, setStep] = useState<Step>('phone');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [otp, setOtp] = useState('');
+  const [phone, setPhone] = useState('');
+  const [seconds, setSeconds] = useState(30);
 
   const {
     control,
     handleSubmit,
-    formState: { errors },
-  } = useForm<SignupFormValues>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: {
-      fullName: '',
-      phone: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-    },
+  } = useForm<PhoneFormValues>({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { fullName: '', phone: '' },
   });
 
-  const onSubmit = async (values: SignupFormValues) => {
+  const startTimer = () => {
+    setSeconds(30);
+    const interval = setInterval(() => {
+      setSeconds((s) => {
+        if (s <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const onRequestOtp = async (values: PhoneFormValues) => {
     setSubmitting(true);
     setError(null);
     try {
-      const { verificationId } = await authApi.signup({
+      const result = await authApi.signup({
         fullName: values.fullName,
         phone: values.phone,
-        email: values.email,
-        password: values.password,
+        email: `${values.phone}@zpay.user`,
+        password: 'zpay-phone-signup',
       });
-      router.push({ pathname: '/otp', params: { verificationId } });
+      setVerificationId(result.verificationId);
+      setPhone(values.phone);
+      setStep('otp');
+      startTimer();
+    } catch (e) {
+      setError(normalizeError(e).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onVerifyOtp = async () => {
+    if (!verificationId || !isValidOtp(otp)) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const session = await authApi.verifyOtp({ verificationId, code: otp });
+      recordSecurityEvent({
+        type: 'otp_login',
+        title: 'Signup verified',
+        detail: session.user.phone,
+      });
+      router.replace('/pin-setup');
+    } catch (e) {
+      setError(normalizeError(e).message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onResend = async () => {
+    if (!verificationId) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      await authApi.resendOtp(verificationId);
+      setOtp('');
+      startTimer();
     } catch (e) {
       setError(normalizeError(e).message);
     } finally {
@@ -47,92 +111,141 @@ export default function SignupScreen() {
   };
 
   return (
-    <Screen title="Create account" subtitle="Start paying bills in minutes" back>
-      <View style={styles.form}>
-        <InlineError message={error} />
-        <Controller
-          control={control}
-          name="fullName"
-          render={({ field }) => (
-            <Input
-              label="Full name"
-              placeholder="Ada Obi"
-              autoCapitalize="words"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.fullName?.message}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="phone"
-          render={({ field }) => (
-            <Input
-              label="Phone number"
-              placeholder="0801 234 5678"
-              keyboardType="phone-pad"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.phone?.message}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="email"
-          render={({ field }) => (
-            <Input
-              label="Email address"
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.email?.message}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="password"
-          render={({ field }) => (
-            <Input
-              label="Password"
-              placeholder="At least 6 characters"
-              secureTextEntry
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.password?.message}
-            />
-          )}
-        />
-        <Controller
-          control={control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <Input
-              label="Confirm password"
-              placeholder="Repeat your password"
-              secureTextEntry
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.confirmPassword?.message}
-            />
-          )}
-        />
-        <Button
-          label="Create account"
-          loading={submitting}
-          disabled={submitting}
-          onPress={handleSubmit(onSubmit)}
-        />
+    <Screen title={undefined} scroll={false} contentStyle={styles.content}>
+      <View style={styles.hero}>
+        <ZpayMark size={88} />
+        <Text variant="display" style={styles.logoText}>
+          ZPAY
+        </Text>
+        <Text variant="body" color="textSecondary" style={styles.tagline}>
+          Create your account in seconds
+        </Text>
       </View>
+
+      {step === 'phone' ? (
+        <View style={styles.form}>
+          <Text variant="title" style={styles.formTitle}>
+            Sign up
+          </Text>
+          <Text variant="small" color="textSecondary" style={styles.formSubtitle}>
+            Enter your details to get started
+          </Text>
+          <InlineError message={error} />
+          <Controller
+            control={control}
+            name="fullName"
+            render={({ field }) => (
+              <Input
+                label="Full name"
+                placeholder="Ada Obi"
+                autoCapitalize="words"
+                textContentType="name"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="phone"
+            render={({ field }) => (
+              <Input
+                label="Phone number"
+                placeholder="0801 234 5678"
+                keyboardType="phone-pad"
+                textContentType="telephoneNumber"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+              />
+            )}
+          />
+          <Button
+            label="Create account"
+            loading={submitting}
+            disabled={submitting}
+            onPress={handleSubmit(onRequestOtp)}
+          />
+        </View>
+      ) : (
+        <View style={styles.form}>
+          <Text variant="title" style={styles.formTitle}>
+            Verify your number
+          </Text>
+          <Text variant="small" color="textSecondary" style={styles.formSubtitle}>
+            Enter the 6-digit code sent to {phone}
+          </Text>
+          <InlineError message={error} />
+          <View style={styles.otpRow}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.otpBox,
+                  {
+                    borderColor:
+                      otp.length === i
+                        ? '#00e5ff'
+                        : otp.length > i
+                          ? 'rgba(0,229,255,0.4)'
+                          : 'rgba(255,255,255,0.1)',
+                    backgroundColor: otp.length > i ? 'rgba(0,229,255,0.08)' : 'rgba(255,255,255,0.04)',
+                  },
+                ]}>
+                <Text variant="title" style={{ color: otp.length > i ? '#ffffff' : 'rgba(255,255,255,0.3)' }}>
+                  {otp[i] || ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.otpInputRow}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <View key={i} style={styles.otpInputWrapper}>
+                <Input
+                  value={otp[i] || ''}
+                  onChangeText={(text) => {
+                    const digit = text.replace(/\D/g, '').slice(-1);
+                    const newOtp = otp.split('');
+                    newOtp[i] = digit;
+                    setOtp(newOtp.join('').slice(0, 6));
+                  }}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  style={styles.otpHiddenInput}
+                />
+              </View>
+            ))}
+          </View>
+          <Button
+            label="Verify"
+            loading={submitting}
+            disabled={submitting || !isValidOtp(otp)}
+            onPress={onVerifyOtp}
+          />
+          {seconds > 0 ? (
+            <Text variant="small" color="textSecondary" style={styles.resendText}>
+              Resend code in {seconds}s
+            </Text>
+          ) : (
+            <Button
+              label="Resend code"
+              variant="ghost"
+              loading={submitting}
+              onPress={onResend}
+            />
+          )}
+          <Button
+            label="Change number"
+            variant="ghost"
+            onPress={() => {
+              setStep('phone');
+              setOtp('');
+              setError(null);
+            }}
+          />
+        </View>
+      )}
 
       <View style={styles.footer}>
         <Text variant="small" color="textSecondary">
@@ -149,12 +262,75 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
+  content: {
+    flex: 1,
+  },
+  hero: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 40,
+    gap: Spacing.md,
+  },
+  logoText: {
+    letterSpacing: 4,
+  },
+  tagline: {
+    textAlign: 'center',
+    paddingHorizontal: Spacing.xxl,
+  },
   form: {
     gap: Spacing.lg,
-    marginTop: Spacing.xxxl,
+    paddingHorizontal: Spacing.lg,
+  },
+  formTitle: {
+    marginBottom: Spacing.xxs,
+  },
+  formSubtitle: {
+    marginBottom: Spacing.sm,
+  },
+  otpRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    marginBottom: Spacing.md,
+  },
+  otpBox: {
+    width: 48,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otpInputRow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 56,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+    opacity: 0,
+  },
+  otpInputWrapper: {
+    width: 48,
+    height: 56,
+  },
+  otpHiddenInput: {
+    width: 48,
+    height: 56,
+    textAlign: 'center',
+    fontSize: 24,
+    padding: 0,
+  },
+  resendText: {
+    textAlign: 'center',
+    marginTop: Spacing.sm,
   },
   footer: {
     alignItems: 'center',
-    marginTop: Spacing.xxl,
+    marginTop: 'auto',
+    paddingBottom: Spacing.xxxl,
   },
 });

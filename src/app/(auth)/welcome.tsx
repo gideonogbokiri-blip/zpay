@@ -14,7 +14,7 @@ export default function WelcomeScreen() {
           ZPAY
         </Text>
         <Text variant="body" color="textSecondary" style={styles.tagline}>
-          Pay bills, buy airtime and register for exams in one place.
+          Pay bills, buy airtime and register for exams — all in one place.
         </Text>
       </View>
 
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     textAlign: 'center',
+    lineHeight: 22,
   },
   actions: {
     gap: Spacing.md,
