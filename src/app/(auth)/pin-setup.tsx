@@ -6,10 +6,14 @@ import { Button, InlineError, PinInput, Screen, View } from '@/components/ui';
 import { useAuth } from '@/hooks/use-auth';
 import { authApi, normalizeError } from '@/lib/api';
 import { isValidPin } from '@/lib/validation/auth';
+import { useSecurityPreferences } from '@/state/security';
+import { useTransactionPinStore } from '@/state/transaction-pin';
 import { Spacing } from '@/theme/tokens';
 
 export default function PinSetupScreen() {
   const { token, setUser } = useAuth();
+  const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
+  const setDevicePin = useTransactionPinStore((state) => state.setPin);
   const [stage, setStage] = useState<'create' | 'confirm'>('create');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -45,6 +49,12 @@ export default function PinSetupScreen() {
     setError(null);
     try {
       const { user } = await authApi.createPin(token, { pin });
+      await setDevicePin(user.id, pin);
+      recordSecurityEvent({
+        type: 'pin_created',
+        title: 'Transaction PIN created',
+        detail: 'Device payment approval enabled',
+      });
       setUser(user);
       router.replace('/');
     } catch (e) {

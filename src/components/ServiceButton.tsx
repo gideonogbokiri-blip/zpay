@@ -1,8 +1,8 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { IconSize, Radii, Shadow, Spacing, TouchTarget } from '@/theme/tokens';
 import { Icon, type IconName } from './Icon';
 import { Text } from './ui';
-import { IconSize, Radii, Spacing, TouchTarget } from '@/theme/tokens';
 
 export interface ServiceButtonProps {
   icon: IconName;
@@ -21,7 +21,17 @@ export function ServiceButton({ icon, label, color, onPress, layout = 'grid' }: 
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      <View style={[styles.iconWrap, { backgroundColor: withAlpha(color, 0.18), width: iconSize + Spacing.xxxl, height: iconSize + Spacing.xxxl }]}>
+      <View
+        style={[
+          styles.iconWrap,
+          {
+            backgroundColor: withAlpha(color, 0.18),
+            width: iconSize + Spacing.xxxl,
+            height: iconSize + Spacing.xxxl,
+            borderColor: withAlpha(color, 0.35),
+          },
+          Shadow,
+        ]}>
         <Icon name={icon} size={iconSize} color={color} />
       </View>
       <Text variant={layout === 'grid' ? 'small' : 'caption'} numberOfLines={1} style={styles.label}>
@@ -47,16 +57,21 @@ const styles = StyleSheet.create({
     minHeight: TouchTarget.large,
     flex: 1,
     maxWidth: 96,
+    paddingVertical: Spacing.xs,
   },
   iconWrap: {
-    borderRadius: Radii.xxl,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    padding: Spacing.xs,
   },
   label: {
     textAlign: 'center',
+    opacity: 0.9,
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.78,
+    transform: [{ scale: 0.97 }],
   },
 });

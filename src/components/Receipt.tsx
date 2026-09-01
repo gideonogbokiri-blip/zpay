@@ -2,6 +2,8 @@ import { Alert, Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { Icon } from './Icon';
 import { Button, Text } from './ui';
+import { copyToClipboard } from '@/lib/clipboard';
+import { buildReceiptText } from '@/lib/receipt';
 import { formatNaira, formatDateTime } from '@/lib/format';
 import type { Transaction } from '@/lib/api';
 import { IconSize, Spacing } from '@/theme/tokens';
@@ -18,7 +20,7 @@ export function Receipt({ transaction, onClose }: ReceiptProps) {
   const onShare = async () => {
     try {
       await Share.share({
-        message: `ZPAY receipt\n${transaction.serviceName}\n${formatNaira(transaction.total)}\nReference: ${transaction.reference}`,
+        message: buildReceiptText(transaction),
       });
     } catch {
       // share dismissed
@@ -26,7 +28,15 @@ export function Receipt({ transaction, onClose }: ReceiptProps) {
   };
 
   const onDownload = () => {
-    Alert.alert('Receipt downloaded', 'Your receipt PDF has been saved to this device.');
+    Alert.alert(
+      'Receipt export',
+      'PDF export needs a native file/PDF module. Use Share for now; the receipt text includes the transaction reference for support.'
+    );
+  };
+
+  const onCopyReference = async () => {
+    await copyToClipboard(transaction.reference);
+    Alert.alert('Reference copied', transaction.reference);
   };
 
   return (
@@ -65,7 +75,8 @@ export function Receipt({ transaction, onClose }: ReceiptProps) {
 
       <View style={styles.actions}>
         <Button label="Download" variant="secondary" onPress={onDownload} />
-        <Button label="Share" onPress={onShare} />
+        <Button label="Copy reference" variant="outline" onPress={onCopyReference} />
+        <Button label="Share receipt" onPress={onShare} />
       </View>
     </View>
   );

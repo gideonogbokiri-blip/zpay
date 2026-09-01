@@ -5,12 +5,14 @@ import { Icon, type IconName } from '@/components/Icon';
 import { Screen, Text } from '@/components/ui';
 import { useAuth } from '@/hooks/use-auth';
 import { useKyc, useNotifications } from '@/hooks/queries';
+import { useSecurityPreferences } from '@/state/security';
 import { IconSize, Radii, Spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme';
 
 export default function MeScreen() {
   const colors = useTheme();
   const { user, signOut } = useAuth();
+  const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
   const { data: kyc } = useKyc();
   const { data: notifications } = useNotifications();
   const unread = notifications?.filter((n) => !n.readAt).length ?? 0;
@@ -18,7 +20,18 @@ export default function MeScreen() {
   const confirmLogout = () => {
     Alert.alert('Log out?', 'You will need to log in again to use ZPAY.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Log out', style: 'destructive', onPress: () => signOut() },
+      {
+        text: 'Log out',
+        style: 'destructive',
+        onPress: () => {
+          recordSecurityEvent({
+            type: 'logout',
+            title: 'Logged out',
+            detail: user?.email,
+          });
+          signOut();
+        },
+      },
     ]);
   };
 
@@ -50,6 +63,7 @@ export default function MeScreen() {
           badge={unread > 0 ? String(unread) : undefined}
           onPress={() => router.push('/notifications')}
         />
+        <MenuItem icon="chatbubble-ellipses-outline" label="Support" onPress={() => router.push('/support')} />
         <MenuItem icon="settings-outline" label="Settings" onPress={() => router.push('/me/settings')} />
       </View>
 

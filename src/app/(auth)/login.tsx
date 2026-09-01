@@ -8,10 +8,12 @@ import { Button, InlineError, Input, Screen, Text, View } from '@/components/ui'
 import { useAuth } from '@/hooks/use-auth';
 import { authApi, normalizeError } from '@/lib/api';
 import { loginSchema, type LoginFormValues } from '@/lib/validation/auth';
+import { useSecurityPreferences } from '@/state/security';
 import { Spacing } from '@/theme/tokens';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +32,11 @@ export default function LoginScreen() {
     try {
       const session = await authApi.login(values);
       signIn(session);
+      recordSecurityEvent({
+        type: 'login',
+        title: 'Password login',
+        detail: session.user.email,
+      });
       router.replace(session.user.pinSet ? '/' : '/pin-setup');
     } catch (e) {
       setError(normalizeError(e).message);

@@ -1,14 +1,41 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Screen, Text } from '@/components/ui';
+import { enableBiometricAuthentication } from '@/lib/security/biometrics';
+import { useSecurityPreferences } from '@/state/security';
 import { Spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme';
 
 export default function SettingsScreen() {
   const colors = useTheme();
-  const [biometrics, setBiometrics] = useState(false);
+  const biometrics = useSecurityPreferences((state) => state.biometricsEnabled);
+  const setBiometrics = useSecurityPreferences((state) => state.setBiometricsEnabled);
+  const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
   const [notifications, setNotifications] = useState(true);
+
+  const toggleBiometrics = async (nextValue: boolean) => {
+    if (!nextValue) {
+      setBiometrics(false);
+      return;
+    }
+
+    await enableBiometricAuthentication({
+      setEnabled: setBiometrics,
+      onUnavailable: () => {
+        Alert.alert(
+          'Biometrics unavailable',
+          'Set up Face ID, fingerprint, or device biometrics before enabling biometric authentication.'
+        );
+      },
+      onEnabled: () =>
+        recordSecurityEvent({
+          type: 'biometrics_enabled',
+          title: 'Biometric authentication enabled',
+          detail: 'Device biometrics can now protect wallet access.',
+        }),
+    });
+  };
 
   return (
     <Screen title="Settings" subtitle="App preferences" back scroll>
@@ -16,7 +43,7 @@ export default function SettingsScreen() {
         label="Biometric authentication"
         description="Use Face ID / fingerprint to approve payments"
         value={biometrics}
-        onChange={setBiometrics}
+        onChange={toggleBiometrics}
       />
       <SettingToggle
         label="Push notifications"
@@ -37,7 +64,7 @@ interface SettingToggleProps {
   label: string;
   description: string;
   value: boolean;
-  onChange: (value: boolean) => void;
+  onChange: (value: boolean) => void | Promise<void>;
 }
 
 function SettingToggle({ label, description, value, onChange }: SettingToggleProps) {

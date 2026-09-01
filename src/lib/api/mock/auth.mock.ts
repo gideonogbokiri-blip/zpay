@@ -24,6 +24,12 @@ interface PendingVerification {
 const users = new Map<string, MockUserRecord>();
 const pendingVerifications = new Map<string, PendingVerification>();
 
+function logOtp(phone: string, code: string, resent = false): void {
+  if (process.env.EXPO_PUBLIC_DEBUG_OTP === 'true') {
+    console.log(`[mock-auth] ${resent ? 'New OTP' : 'OTP'} for ${phone}: ${code}`);
+  }
+}
+
 function generateId(): string {
   return `usr_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
 }
@@ -76,9 +82,7 @@ export const mockAuthApi = {
       code,
     });
     users.set(payload.phone, { password: payload.password, user: mockUser(payload) });
-    if (__DEV__) {
-      console.log(`[mock-auth] OTP for ${payload.phone}: ${code}`);
-    }
+    logOtp(payload.phone, code);
     return { verificationId };
   },
 
@@ -118,9 +122,7 @@ export const mockAuthApi = {
       );
     }
     pending.code = String(Math.floor(100000 + Math.random() * 900000));
-    if (__DEV__) {
-      console.log(`[mock-auth] New OTP for ${pending.phone}: ${pending.code}`);
-    }
+    logOtp(pending.phone, pending.code, true);
     return { verificationId };
   },
 

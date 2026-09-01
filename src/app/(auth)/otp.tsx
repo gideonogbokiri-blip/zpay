@@ -6,6 +6,7 @@ import { Button, InlineError, PinInput, Screen, Text, View } from '@/components/
 import { useAuth } from '@/hooks/use-auth';
 import { authApi, normalizeError } from '@/lib/api';
 import { isValidOtp } from '@/lib/validation/auth';
+import { useSecurityPreferences } from '@/state/security';
 import { Spacing } from '@/theme/tokens';
 
 const RESEND_SECONDS = 30;
@@ -13,6 +14,7 @@ const RESEND_SECONDS = 30;
 export default function OtpScreen() {
   const params = useLocalSearchParams<{ verificationId?: string }>();
   const { signIn } = useAuth();
+  const recordSecurityEvent = useSecurityPreferences((state) => state.recordSecurityEvent);
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [resending, setResending] = useState(false);
@@ -39,6 +41,11 @@ export default function OtpScreen() {
     try {
       const session = await authApi.verifyOtp({ verificationId, code });
       signIn(session);
+      recordSecurityEvent({
+        type: 'otp_login',
+        title: 'OTP verification login',
+        detail: session.user.phone,
+      });
       router.replace(session.user.pinSet ? '/' : '/pin-setup');
     } catch (e) {
       setError(normalizeError(e).message);

@@ -3,6 +3,7 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { StatusBadge } from '@/components/ui';
 import { Button, Screen, Text } from '@/components/ui';
 import { useKyc } from '@/hooks/queries';
+import { transactionLimitSummary } from '@/lib/security/transaction-limits';
 import { Spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme';
 
@@ -40,6 +41,12 @@ export default function KycScreen() {
                 Status
               </Text>
               <Text variant="bodyBold">{kyc?.status === 'completed' ? 'Completed' : 'Not started'}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text variant="body" color="textSecondary">
+                Payment limit
+              </Text>
+              <Text variant="bodyBold">{transactionLimitSummary(kyc?.tier ?? 'unverified')}</Text>
             </View>
           </View>
           <Text variant="small" color="textSecondary" style={styles.info}>

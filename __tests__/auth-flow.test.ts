@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { act, renderHook } from '@testing-library/react-native';
 
 import { ApiError, authApi } from '@/lib/api';
@@ -10,6 +11,7 @@ beforeEach(async () => {
   __resetMockAuth();
   useSessionStore.setState({ hydrated: false, token: null, user: null });
   await AsyncStorage.clear();
+  (SecureStore as unknown as { __clear: () => void }).__clear();
 });
 
 const signupPayload = {
@@ -20,6 +22,20 @@ const signupPayload = {
 };
 
 describe('mock auth api', () => {
+  it('does not log OTP codes unless explicitly enabled', async () => {
+    const debugOtp = process.env.EXPO_PUBLIC_DEBUG_OTP;
+    process.env.EXPO_PUBLIC_DEBUG_OTP = 'false';
+    const log = jest.spyOn(console, 'log').mockImplementation(() => undefined);
+
+    try {
+      await authApi.signup(signupPayload);
+      expect(log).not.toHaveBeenCalled();
+    } finally {
+      log.mockRestore();
+      process.env.EXPO_PUBLIC_DEBUG_OTP = debugOtp;
+    }
+  });
+
   it('signup -> verify otp -> login flow works', async () => {
     const { verificationId } = await authApi.signup(signupPayload);
     const code = __getMockOtpCode(verificationId);

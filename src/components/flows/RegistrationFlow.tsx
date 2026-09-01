@@ -11,6 +11,9 @@ import { NIGERIAN_STATES, SUBJECTS } from '@/constants/services';
 import { useAuth } from '@/hooks/use-auth';
 import { useRegisterService, useRegistrationFee, useWallet } from '@/hooks/queries';
 import { formatNaira } from '@/lib/format';
+import { useSecurityPreferences } from '@/state/security';
+import { assessTransactionLimit } from '@/lib/security/transaction-limits';
+import { useTransactionPinStore, transactionPinErrorMessage } from '@/state/transaction-pin';
 import { Radii, Spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme';
 
@@ -31,8 +34,11 @@ export function RegistrationFlow({ service, serviceName }: RegistrationFlowProps
   const { data: feeData } = useRegistrationFee(service);
   const { data: wallet } = useWallet();
   const register = useRegisterService();
+  const accountFrozen = useSecurityPreferences((state) => state.accountFrozen);
+  const verifyDevicePin = useTransactionPinStore((state) => state.verifyPin);
 
   const fee = feeData?.fee ?? 0;
+  const limitAssessment = assessTransactionLimit(fee, user?.verificationTier ?? 'unverified');
 
   const [step, setStep] = useState<Step>('details');
   const [fullName, setFullName] = useState(user?.fullName ?? '');
@@ -62,9 +68,22 @@ export function RegistrationFlow({ service, serviceName }: RegistrationFlowProps
     return Object.keys(errors).length === 0;
   };
 
-  const submit = () => {
+  const submit = async () => {
+    if (accountFrozen) {
+      setPinError('Outgoing payments are frozen. Unfreeze them from Security to continue.');
+      return;
+    }
+    if (!limitAssessment.allowed) {
+      setPinError(limitAssessment.message);
+      return;
+    }
     if (pin.length !== 4) {
       setPinError('Enter your 4-digit transaction PIN.');
+      return;
+    }
+    const pinResult = await verifyDevicePin(user?.id, pin);
+    if (pinResult !== 'verified') {
+      setPinError(transactionPinErrorMessage(pinResult));
       return;
     }
     setPinError(null);
@@ -262,8 +281,18 @@ export function RegistrationFlow({ service, serviceName }: RegistrationFlowProps
             ]}
           />
           <WalletBalanceSummary currentBalance={wallet?.balance ?? 0} total={fee} remainingBalance={(wallet?.balance ?? 0) - fee} />
+          {accountFrozen ? (
+            <Text variant="caption" color="danger">
+              Outgoing payments are frozen from Security.
+            </Text>
+          ) : null}
+          {limitAssessment.message ? (
+            <Text variant="caption" color="danger">
+              {limitAssessment.message}
+            </Text>
+          ) : null}
           <View style={styles.stepActions}>
-            <Button label="Pay" onPress={() => setStep('pin')} />
+            <Button label="Pay" disabled={accountFrozen || !limitAssessment.allowed} onPress={() => setStep('pin')} />
             <Button label="Back" variant="ghost" onPress={() => setStep('details')} />
           </View>
         </View>

@@ -1,6 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware';
 
 import type { AuthSession, User } from '@/lib/api';
 
@@ -16,6 +17,29 @@ interface SessionState {
   setHydrated: (value: boolean) => void;
 }
 
+const secureSessionStorage: StateStorage = {
+  getItem: (name) => SecureStore.getItemAsync(name),
+  setItem: (name, value) =>
+    SecureStore.setItemAsync(name, value, {
+      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+    }),
+  removeItem: (name) => SecureStore.deleteItemAsync(name),
+};
+
+const webSessionStorage: StateStorage = {
+  getItem: (name) => Promise.resolve(globalThis.localStorage?.getItem(name) ?? null),
+  setItem: (name, value) => {
+    globalThis.localStorage?.setItem(name, value);
+    return Promise.resolve();
+  },
+  removeItem: (name) => {
+    globalThis.localStorage?.removeItem(name);
+    return Promise.resolve();
+  },
+};
+
+const sessionStorage = Platform.OS === 'web' ? webSessionStorage : secureSessionStorage;
+
 export const useSessionStore = create<SessionState>()(
   persist(
     (set) => ({
@@ -30,9 +54,13 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: 'zpay.session.v1',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ token: state.token, user: state.user }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          useSessionStore.setState({ hydrated: true });
+          return;
+        }
         state?.setHydrated(true);
       },
     }

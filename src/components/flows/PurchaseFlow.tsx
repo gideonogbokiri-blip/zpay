@@ -7,8 +7,12 @@ import { PaymentSummary } from '../payment/PaymentSummary';
 import { WalletBalanceSummary } from '../payment/WalletBalanceSummary';
 import { Button, Input, PinInput, Screen, Text } from '../ui';
 import { api, isInsufficientFunds, type DataBundle, type Provider, type ServiceType, type Transaction, type TvPackage } from '@/lib/api';
-import { usePayService, useProducts, useProviders, useWallet, type Product } from '@/hooks/queries';
+import { useKyc, usePayService, useProducts, useProviders, useWallet, type Product } from '@/hooks/queries';
+import { useAuth } from '@/hooks/use-auth';
 import { formatNaira } from '@/lib/format';
+import { useSecurityPreferences } from '@/state/security';
+import { assessTransactionLimit } from '@/lib/security/transaction-limits';
+import { useTransactionPinStore, transactionPinErrorMessage } from '@/state/transaction-pin';
 import { Radii, Spacing } from '@/theme/tokens';
 import { useTheme } from '@/theme';
 
@@ -25,6 +29,7 @@ function makeIdempotencyKey(): string {
 }
 
 export function PurchaseFlow({ service, serviceName, fee: serviceFee }: PurchaseFlowProps) {
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>('provider');
   const [provider, setProvider] = useState<Provider | null>(null);
   const [identifier, setIdentifier] = useState('');
@@ -40,13 +45,17 @@ export function PurchaseFlow({ service, serviceName, fee: serviceFee }: Purchase
   const { data: providers } = useProviders(service);
   const { data: products } = useProducts(service, provider?.id ?? null);
   const { data: wallet } = useWallet();
+  const { data: kyc } = useKyc();
   const pay = usePayService();
+  const accountFrozen = useSecurityPreferences((state) => state.accountFrozen);
+  const verifyDevicePin = useTransactionPinStore((state) => state.verifyPin);
 
   const needsCustomer = service === 'ELECTRICITY' || service === 'TV' || service === 'AIRTIME' || service === 'DATA';
 
   const effectiveFee = provider?.fee ?? serviceFee;
   const effectiveAmount = service === 'DATA' || service === 'TV' ? bundle?.price ?? 0 : Number(amount) || 0;
   const total = effectiveAmount + effectiveFee;
+  const limitAssessment = assessTransactionLimit(total, kyc?.tier ?? user?.verificationTier ?? 'unverified');
 
   const verifyCustomer = async () => {
     if (!provider) return;
@@ -73,9 +82,22 @@ export function PurchaseFlow({ service, serviceName, fee: serviceFee }: Purchase
 
   const nextFromCustomer = () => setStep('product');
 
-  const submit = () => {
+  const submit = async () => {
+    if (accountFrozen) {
+      setPinError('Outgoing payments are frozen. Unfreeze them from Security to continue.');
+      return;
+    }
+    if (!limitAssessment.allowed) {
+      setPinError(limitAssessment.message);
+      return;
+    }
     if (pin.length !== 4) {
       setPinError('Enter your 4-digit transaction PIN.');
+      return;
+    }
+    const pinResult = await verifyDevicePin(user?.id, pin);
+    if (pinResult !== 'verified') {
+      setPinError(transactionPinErrorMessage(pinResult));
       return;
     }
     setPinError(null);
@@ -194,6 +216,8 @@ export function PurchaseFlow({ service, serviceName, fee: serviceFee }: Purchase
           total={total}
           balance={wallet?.balance ?? 0}
           canSubmit={wallet ? wallet.balance >= total : true}
+          frozen={accountFrozen}
+          limitMessage={limitAssessment.message}
           onBack={() => setStep('product')}
           onNext={() => setStep('pin')}
         />
@@ -406,7 +430,7 @@ function ProductStep({
                     {p.name}
                   </Text>
                   <Text variant="caption" color="textMuted">
-                    {sub} · {formatNaira(p.price)}
+                    {sub} - {formatNaira(p.price)}
                   </Text>
                 </View>
                 <View style={[styles.radio, { borderColor: isSelected ? colors.accent : colors.textMuted }]}>
@@ -466,6 +490,8 @@ interface ReviewStepProps {
   total: number;
   balance: number;
   canSubmit: boolean;
+  frozen: boolean;
+  limitMessage: string | null;
   onBack: () => void;
   onNext: () => void;
 }
@@ -481,6 +507,8 @@ function ReviewStep({
   total,
   balance,
   canSubmit,
+  frozen,
+  limitMessage,
   onBack,
   onNext,
 }: ReviewStepProps) {
@@ -502,8 +530,18 @@ function ReviewStep({
         ]}
       />
       <WalletBalanceSummary currentBalance={balance} total={total} remainingBalance={balance - total} />
+      {frozen ? (
+        <Text variant="caption" color="danger">
+          Outgoing payments are frozen from Security.
+        </Text>
+      ) : null}
+      {limitMessage ? (
+        <Text variant="caption" color="danger">
+          {limitMessage}
+        </Text>
+      ) : null}
       <View style={styles.stepActions}>
-        <Button label="Pay" disabled={!canSubmit} onPress={onNext} />
+        <Button label="Pay" disabled={!canSubmit || frozen || Boolean(limitMessage)} onPress={onNext} />
         <Button label="Back" variant="ghost" onPress={onBack} />
       </View>
     </View>

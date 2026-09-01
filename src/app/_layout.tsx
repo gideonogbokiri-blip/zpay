@@ -20,6 +20,7 @@ function RootNavigator() {
       <Stack.Screen name="tx/[id]" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="tx/[id]/receipt" options={{ presentation: 'modal' }} />
       <Stack.Screen name="notifications" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="support" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="me/profile" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="me/kyc" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="me/security" options={{ animation: 'slide_from_right' }} />

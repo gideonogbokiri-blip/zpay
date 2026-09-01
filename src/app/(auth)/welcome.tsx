@@ -1,14 +1,15 @@
 import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
+import { ZpayMark } from '@/components/ZpayMark';
 import { Button, Screen, Text, View } from '@/components/ui';
-import { IconSize, Spacing } from '@/theme/tokens';
+import { Spacing } from '@/theme/tokens';
 
 export default function WelcomeScreen() {
   return (
     <Screen title={undefined} scroll={false} contentStyle={styles.content}>
       <View style={styles.brand}>
-        <View style={styles.logo} />
+        <ZpayMark size={108} />
         <Text variant="display" style={styles.logoText}>
           ZPAY
         </Text>
@@ -39,12 +40,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.lg,
     paddingHorizontal: Spacing.xxl,
-  },
-  logo: {
-    width: IconSize.xxl * 1.5,
-    height: IconSize.xxl * 1.5,
-    borderRadius: Spacing.xxl,
-    backgroundColor: 'rgba(0, 244, 254, 0.15)',
   },
   logoText: {
     letterSpacing: 4,

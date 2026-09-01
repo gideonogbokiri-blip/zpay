@@ -3,8 +3,9 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { IconSize, MaxContentWidth, Radii, Spacing } from '@/theme/tokens';
+import { Icon } from '@/components/Icon';
 import { ThemeProvider, useTheme, type ThemeVariant } from '@/theme';
+import { IconSize, MaxContentWidth, Radii, Spacing } from '@/theme/tokens';
 import { Text } from './Text';
 import { View } from './View';
 
@@ -98,11 +99,7 @@ function ScreenInner({
 
 function BackIcon() {
   const colors = useTheme();
-  return (
-    <Text variant="title" style={{ color: colors.text, fontSize: IconSize.xl, lineHeight: undefined }}>
-      ‹
-    </Text>
-  );
+  return <Icon name="chevron-back" size={IconSize.lg} color={colors.text} />;
 }
 
 const styles = StyleSheet.create({
