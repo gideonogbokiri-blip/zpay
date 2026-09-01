@@ -1,7 +1,5 @@
 import { StyleSheet } from 'react-native';
 
-import { Radii, Spacing } from '@/theme/tokens';
-import { useTheme } from '@/theme';
 import { Text } from './Text';
 import { View } from './View';
 
@@ -13,45 +11,50 @@ export interface StatusBadgeProps {
 }
 
 const labelFor: Record<StatusKind, string> = {
-  success: 'Successful',
-  pending: 'Pending',
-  failed: 'Failed',
-  info: 'Info',
+  success: 'SUCCESS',
+  pending: 'PENDING',
+  failed: 'FAILED',
+  info: 'INFO',
 };
 
 export function StatusBadge({ status, label }: StatusBadgeProps) {
-  const colors = useTheme();
-  const bg = softBackground[status](colors);
-  const fg = statusColor[status](colors);
-
   return (
-    <View style={[styles.badge, { backgroundColor: bg }]}>
-      <Text variant="caption" style={{ color: fg, fontWeight: '600' }}>
+    <View style={[styles.badge, statusStyles[status].bg]}>
+      <Text variant="caption" style={[styles.text, statusStyles[status].fg]}>
         {label ?? labelFor[status]}
       </Text>
     </View>
   );
 }
 
-const statusColor = {
-  success: (c: ReturnType<typeof useTheme>) => c.success,
-  pending: (c: ReturnType<typeof useTheme>) => c.warning,
-  failed: (c: ReturnType<typeof useTheme>) => c.danger,
-  info: (c: ReturnType<typeof useTheme>) => c.info,
-} as const;
-
-const softBackground = {
-  success: (c: ReturnType<typeof useTheme>) => c.successSoft,
-  pending: (c: ReturnType<typeof useTheme>) => 'rgba(255, 176, 32, 0.14)',
-  failed: (c: ReturnType<typeof useTheme>) => c.dangerSoft,
-  info: (c: ReturnType<typeof useTheme>) => 'rgba(77, 171, 247, 0.14)',
+const statusStyles = {
+  success: {
+    bg: { backgroundColor: 'rgba(0, 200, 83, 0.15)' },
+    fg: { color: '#00c853' },
+  },
+  pending: {
+    bg: { backgroundColor: 'rgba(255, 176, 32, 0.15)' },
+    fg: { color: '#FFB020' },
+  },
+  failed: {
+    bg: { backgroundColor: 'rgba(255, 77, 106, 0.15)' },
+    fg: { color: '#ff4d6a' },
+  },
+  info: {
+    bg: { backgroundColor: 'rgba(77, 171, 247, 0.15)' },
+    fg: { color: '#4DABF7' },
+  },
 } as const;
 
 const styles = StyleSheet.create({
   badge: {
-    borderRadius: Radii.full,
-    paddingHorizontal: Spacing.sm + Spacing.xs,
-    paddingVertical: Spacing.xs,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     alignSelf: 'flex-start',
+  },
+  text: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

@@ -103,6 +103,6 @@ describe('Tabs auth guard', () => {
         <HomeScreen />
       </QueryClientProvider>
     );
-    expect(screen.getByText('Hi, Ada')).toBeTruthy();
+    expect(screen.getByText(/Ada/)).toBeTruthy();
   }, 15000);
 });

@@ -9,9 +9,15 @@ import { Screen, Text } from '@/components/ui';
 import { ACTIVE_SERVICES, SERVICE_META, SERVICE_NAMES } from '@/constants/services';
 import { useNotifications, useServices, useTransactions, useWallet } from '@/hooks/queries';
 import { useAuth } from '@/hooks/use-auth';
-import { formatNaira } from '@/lib/format';
 import { useTheme } from '@/theme';
-import { IconSize, Radii, Shadow, Spacing } from '@/theme/tokens';
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return 'Good Morning';
+  if (hour >= 12 && hour < 17) return 'Good Afternoon';
+  if (hour >= 17 && hour < 21) return 'Good Evening';
+  return 'Good Night';
+}
 
 export default function HomeScreen() {
   const colors = useTheme();
@@ -30,90 +36,40 @@ export default function HomeScreen() {
   return (
     <Screen title={undefined} scroll>
       <View style={styles.header}>
-        <View style={styles.brandBlock}>
-          <View style={styles.brandRow}>
-            <View style={[styles.mark, { backgroundColor: colors.accent }]}>
-              <Icon name="card" size={IconSize.sm} color={colors.background} />
-            </View>
-            <View>
-              <Text variant="smallBold" style={styles.brand}>
-                ZPAY
-              </Text>
-              <Text variant="caption" color="textMuted">
-                Personal • NGN
-              </Text>
-            </View>
+        <View style={styles.headerLeft}>
+          <View style={styles.avatar}>
+            <Text variant="smallBold" style={styles.avatarText}>
+              {firstName[0]?.toUpperCase() ?? 'U'}
+            </Text>
           </View>
+          <Text style={styles.logo}>ZPAY</Text>
         </View>
-        <View style={styles.headerActions}>
-          <Link href="/notifications" asChild>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Notifications"
-              style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
-              <Icon name="notifications-outline" size={IconSize.lg} color={colors.text} />
-              {unreadCount > 0 ? <View style={styles.unreadDot} /> : null}
-            </Pressable>
-          </Link>
-          <Link href="/me" asChild>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Profile"
-              style={({ pressed }) => [styles.avatar, pressed && styles.pressed]}>
-              <Text variant="smallBold" style={styles.avatarText}>
-                {firstName[0]?.toUpperCase() ?? 'U'}
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
+        <Link href="/notifications" asChild>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            style={({ pressed }) => [styles.bell, pressed && styles.pressed]}>
+            <Icon name="notifications-outline" size={20} color={colors.text} />
+            {unreadCount > 0 ? <View style={styles.unreadDot} /> : null}
+          </Pressable>
+        </Link>
       </View>
 
       <View style={styles.greeting}>
-        <View style={styles.greetingLeft}>
-          <Text variant="title" style={styles.greetingText}>
-            Hi, {firstName}
-          </Text>
-          <Text variant="small" color="textMuted">
-            Make today count
-          </Text>
-        </View>
-        <View style={styles.greetingRight}>
-          <View style={styles.starPill}>
-            <Icon name="sparkles" size={IconSize.sm} color="#FFB020" />
-            <Text variant="caption" color="textSecondary" style={styles.starText}>
-              Smart spending
-            </Text>
-          </View>
-        </View>
+        <Text style={styles.greetingTitle}>{getGreeting()}, {firstName}</Text>
+        <Text style={styles.greetingSubtitle}>Ready to manage your finances today?</Text>
       </View>
 
       <WalletCard
         balance={wallet?.balance ?? 0}
         loading={walletLoading}
         onFundPress={() => router.push('/wallet/fund')}
-        onHistoryPress={() => router.push('/history')}
+        onTransferPress={() => router.push('/history')}
         onPress={() => router.push('/wallet/fund')}
       />
-      {wallet && !walletLoading ? (
-        <View style={styles.balanceNote}>
-          <Icon name="wallet-outline" size={IconSize.sm} color={colors.textMuted} />
-          <Text variant="caption" color="textMuted">
-            Available balance {formatNaira(wallet.balance)}
-          </Text>
-        </View>
-      ) : null}
 
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text variant="title">Services</Text>
-          <Link href="/service" asChild>
-            <Pressable accessibilityRole="button">
-              <Text variant="smallBold" color="accent">
-                See all
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
+        <Text style={styles.sectionTitle}>Quick Services</Text>
         <View style={styles.grid}>
           {serviceOrder.map((type) => (
             <ServiceButton
@@ -129,25 +85,23 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text variant="title">Recent transactions</Text>
+        <View style={styles.txHeader}>
+          <Text style={styles.sectionTitle}>Recent Transactions</Text>
           <Link href="/history" asChild>
             <Pressable accessibilityRole="button">
-              <Text variant="smallBold" color="accent">
-                View all
-              </Text>
+              <Text style={styles.seeAll}>See All</Text>
             </Pressable>
           </Link>
         </View>
         {recent.length === 0 ? (
-          <View style={[styles.emptyCard, Shadow]}>
-            <Icon name="receipt-outline" size={IconSize.xl} color={colors.textMuted} />
+          <View style={styles.emptyCard}>
+            <Icon name="receipt-outline" size={32} color={colors.textMuted} />
             <Text variant="small" color="textMuted" style={styles.emptyText}>
               No transactions yet. Pay a bill to get started.
             </Text>
           </View>
         ) : (
-          <View style={[styles.card, Shadow]}>
+          <View style={styles.txList}>
             {recent.map((tx) => (
               <TransactionRow
                 key={tx.id}
@@ -167,44 +121,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: Spacing.sm,
-    paddingBottom: Spacing.md,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  brandBlock: {
-    gap: Spacing.xxs,
-  },
-  brandRow: {
+  headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: 12,
   },
-  mark: {
-    width: 34,
-    height: 34,
-    borderRadius: 12,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 229, 255, 0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(0, 229, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#00F4FE',
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
   },
-  brand: {
-    letterSpacing: 2,
-    fontSize: 15,
+  avatarText: {
+    color: '#00e5ff',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
+  logo: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: '#ffffff',
   },
-  iconButton: {
-    width: IconSize.xxl,
-    height: IconSize.xxl,
-    borderRadius: Radii.full,
-    backgroundColor: 'rgba(128,128,128,0.15)',
+  bell: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   unreadDot: {
     position: 'absolute',
@@ -213,95 +164,68 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#FF453A',
-  },
-  avatar: {
-    width: IconSize.xxl,
-    height: IconSize.xxl,
-    borderRadius: Radii.full,
-    backgroundColor: 'rgba(0,244,254,0.16)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(0,244,254,0.4)',
-  },
-  avatarText: {
-    color: '#8FF7FF',
+    backgroundColor: '#ff4d6a',
   },
   pressed: {
     opacity: 0.7,
   },
   greeting: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Spacing.md,
+    paddingVertical: 12,
+    paddingBottom: 20,
   },
-  greetingLeft: {
-    gap: Spacing.xxs,
-  },
-  greetingText: {
+  greetingTitle: {
     fontSize: 24,
-    letterSpacing: -0.4,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: 4,
   },
-  greetingRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  starPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radii.full,
-    backgroundColor: 'rgba(255,176,32,0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,176,32,0.25)',
-  },
-  starText: {
-    fontWeight: '600',
-  },
-  balanceNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    marginTop: Spacing.sm,
+  greetingSubtitle: {
+    fontSize: 14,
+    color: '#8b9aab',
   },
   section: {
-    marginTop: Spacing.xxl,
-    gap: Spacing.lg,
+    marginBottom: 24,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginBottom: 16,
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    rowGap: Spacing.xl,
-    columnGap: Spacing.md,
-    justifyContent: 'space-between',
+    rowGap: 16,
+    columnGap: 12,
   },
-  card: {
-    borderRadius: 24,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+  txHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  txHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  seeAll: {
+    fontSize: 13,
+    color: '#00e5ff',
+    fontWeight: '500',
+  },
+  txList: {
+    gap: 12,
   },
   emptyCard: {
-    borderRadius: 24,
-    padding: Spacing.xxl,
+    borderRadius: 16,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.md,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    gap: 12,
+    backgroundColor: '#121a23',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   emptyText: {
     textAlign: 'center',

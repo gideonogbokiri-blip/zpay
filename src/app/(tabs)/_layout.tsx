@@ -36,12 +36,20 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
+          backgroundColor: '#0c1219',
+          borderTopColor: 'rgba(255, 255, 255, 0.06)',
+          borderTopWidth: 1,
+          height: 72,
+          paddingTop: 8,
+          paddingBottom: 8,
         },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.tabInactive,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarActiveTintColor: '#00e5ff',
+        tabBarInactiveTintColor: '#8b9aab',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
+          marginTop: 4,
+        },
       }}>
       <Tabs.Screen
         name="index"

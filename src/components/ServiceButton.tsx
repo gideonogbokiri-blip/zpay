@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { IconSize, Shadow, Spacing, TouchTarget } from '@/theme/tokens';
+import { TouchTarget } from '@/theme/tokens';
 import { Icon, type IconName } from './Icon';
 import { Text } from './ui';
 
@@ -13,65 +13,49 @@ export interface ServiceButtonProps {
 }
 
 export function ServiceButton({ icon, label, color, onPress, layout = 'grid' }: ServiceButtonProps) {
-  const iconSize = layout === 'grid' ? IconSize.xxl : IconSize.xl;
-
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      <View
-        style={[
-          styles.iconWrap,
-          {
-            backgroundColor: withAlpha(color, 0.18),
-            width: iconSize + Spacing.xxxl,
-            height: iconSize + Spacing.xxxl,
-            borderColor: withAlpha(color, 0.35),
-          },
-          Shadow,
-        ]}>
-        <Icon name={icon} size={iconSize} color={color} />
+      <View style={styles.iconWrap}>
+        <Icon name={icon} size={24} color="#ffffff" />
       </View>
-      <Text variant={layout === 'grid' ? 'small' : 'caption'} numberOfLines={1} style={styles.label}>
+      <Text variant="caption" numberOfLines={1} style={styles.label}>
         {label}
       </Text>
     </Pressable>
   );
 }
 
-function withAlpha(hex: string, alpha: number): string {
-  const value = hex.replace('#', '');
-  const r = parseInt(value.slice(0, 2), 16);
-  const g = parseInt(value.slice(2, 4), 16);
-  const b = parseInt(value.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: Spacing.sm,
+    gap: 8,
     minHeight: TouchTarget.large,
     flex: 1,
     maxWidth: 96,
-    paddingVertical: Spacing.xs,
+    paddingVertical: 4,
   },
   iconWrap: {
-    borderRadius: 22,
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#151e28',
     borderWidth: 1,
-    padding: Spacing.xs,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   label: {
     textAlign: 'center',
-    opacity: 0.9,
+    color: '#8b9aab',
+    fontSize: 12,
   },
   pressed: {
-    opacity: 0.78,
-    transform: [{ scale: 0.97 }],
+    opacity: 0.7,
+    transform: [{ scale: 0.95 }],
   },
 });
