@@ -35,6 +35,7 @@ export default function HomeScreen() {
 
   return (
     <Screen title={undefined} scroll>
+      {/* ──── Header ──── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.avatar}>
@@ -55,11 +56,16 @@ export default function HomeScreen() {
         </Link>
       </View>
 
-      <View style={styles.greeting}>
-        <Text style={styles.greetingTitle}>{getGreeting()}, {firstName}</Text>
-        <Text style={styles.greetingSubtitle}>Ready to manage your finances today?</Text>
+      {/* ──── Greeting Banner ──── */}
+      <View style={styles.greetingBanner}>
+        <View>
+          <Text style={styles.greetingTitle}>{getGreeting()}, {firstName} 👋</Text>
+          <Text style={styles.greetingSubtitle}>Ready to manage your finances today?</Text>
+        </View>
+        <View style={styles.greetingAccent} />
       </View>
 
+      {/* ──── Wallet Card ──── */}
       <WalletCard
         balance={wallet?.balance ?? 0}
         loading={walletLoading}
@@ -68,8 +74,12 @@ export default function HomeScreen() {
         onPress={() => router.push('/wallet/fund')}
       />
 
+      {/* ──── Quick Services ──── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Services</Text>
+        <View style={styles.sectionHeader}>
+          <View style={styles.sectionPill} />
+          <Text style={styles.sectionTitle}>Quick Services</Text>
+        </View>
         <View style={styles.grid}>
           {serviceOrder.map((type) => (
             <ServiceButton
@@ -84,9 +94,13 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* ──── Recent Transactions ──── */}
       <View style={styles.section}>
         <View style={styles.txHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionPill} />
+            <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          </View>
           <Link href="/history" asChild>
             <Pressable accessibilityRole="button">
               <Text style={styles.seeAll}>See All</Text>
@@ -144,8 +158,8 @@ const styles = StyleSheet.create({
   },
   logo: {
     fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: 1,
     color: '#ffffff',
   },
   bell: {
@@ -169,28 +183,57 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-  greeting: {
-    paddingVertical: 12,
-    paddingBottom: 20,
+  // Greeting banner
+  greetingBanner: {
+    marginVertical: 14,
+    marginBottom: 20,
+    backgroundColor: '#0d1a24',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 229, 255, 0.12)',
+    padding: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  greetingAccent: {
+    position: 'absolute',
+    right: -20,
+    top: -20,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(0, 229, 255, 0.06)',
   },
   greetingTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
     color: '#ffffff',
     marginBottom: 4,
   },
   greetingSubtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#8b9aab',
   },
+  // Sections
   section: {
     marginBottom: 24,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  sectionPill: {
+    width: 4,
+    height: 18,
+    borderRadius: 2,
+    backgroundColor: '#00e5ff',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#ffffff',
-    marginBottom: 16,
   },
   grid: {
     flexDirection: 'row',
@@ -203,11 +246,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 14,
-  },
-  txHeaderTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ffffff',
   },
   seeAll: {
     fontSize: 13,

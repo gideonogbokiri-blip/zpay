@@ -19,8 +19,8 @@ export function ServiceButton({ icon, label, color, onPress, layout = 'grid' }: 
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}>
-      <View style={styles.iconWrap}>
-        <Icon name={icon} size={24} color="#ffffff" />
+      <View style={[styles.iconWrap, { backgroundColor: color + '22', borderColor: color + '33' }]}>
+        <Icon name={icon} size={24} color={color} />
       </View>
       <Text variant="caption" numberOfLines={1} style={styles.label}>
         {label}

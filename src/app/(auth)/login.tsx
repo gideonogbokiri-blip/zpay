@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { StyleSheet } from 'react-native';
+import { Image, StyleSheet } from 'react-native';
 
 import { ZpayMark } from '@/components/ZpayMark';
 import { Button, InlineError, Input, Screen, Text, View } from '@/components/ui';
@@ -53,16 +53,26 @@ export default function LoginScreen() {
   };
 
   return (
-    <Screen title={undefined} scroll={false} contentStyle={styles.content}>
+    <Screen title={undefined} scroll contentStyle={styles.content}>
+      {/* Hero with brand + woman image side by side */}
       <View style={styles.hero}>
-        <ZpayMark size={88} />
-        <Text variant="display" style={styles.logoText}>
-          ZPAY
-        </Text>
-        <Text variant="body" color="textSecondary" style={styles.tagline}>
-          Pay bills, buy airtime and register for exams — all in one place.
-        </Text>
+        <View style={styles.heroLeft}>
+          <ZpayMark size={48} />
+          <Text style={styles.logoText}>ZPAY</Text>
+          <Text variant="small" color="textSecondary" style={styles.tagline}>
+            Pay bills, airtime &amp; exam fees — all in one place.
+          </Text>
+        </View>
+        <Image
+          source={require('../../../assets/images/woman-hero.jpg')}
+          style={styles.heroImage}
+          resizeMode="contain"
+          accessibilityLabel="Professional woman using ZPAY"
+        />
       </View>
+
+      {/* Divider */}
+      <View style={styles.divider} />
 
       <View style={styles.form}>
         <Text variant="title" style={styles.formTitle}>
@@ -130,17 +140,41 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   hero: {
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 40,
-    gap: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingTop: Spacing.xxl,
+    paddingHorizontal: Spacing.xxl,
+    paddingBottom: 0,
+    backgroundColor: '#0d1a24',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    overflow: 'hidden',
+  },
+  heroLeft: {
+    flex: 1,
+    gap: Spacing.sm,
+    paddingBottom: Spacing.xl,
   },
   logoText: {
-    letterSpacing: 4,
+    fontSize: 26,
+    fontWeight: '800',
+    letterSpacing: 3,
+    color: '#ffffff',
   },
   tagline: {
-    textAlign: 'center',
-    paddingHorizontal: Spacing.xxl,
+    lineHeight: 20,
+    fontSize: 12,
+  },
+  heroImage: {
+    width: 140,
+    height: 180,
+    marginBottom: -2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(0, 229, 255, 0.12)',
+    marginHorizontal: Spacing.xxl,
+    marginVertical: Spacing.xxl,
   },
   form: {
     gap: Spacing.lg,
@@ -154,7 +188,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     alignItems: 'center',
-    marginTop: 'auto',
+    paddingTop: Spacing.xxl,
     paddingBottom: Spacing.xxxl,
   },
 });

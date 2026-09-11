@@ -83,5 +83,21 @@
   "private": true,
   "allowScripts": {
     "unrs-resolver@1.12.2": true
-  }
+  },
+  "description": "Expo Router mobile app for wallet funding, bill payments, airtime/data purchases, transaction history, and education registration.",
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gideonogbokiri-blip/zpay.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/gideonogbokiri-blip/zpay/issues"
+  },
+  "homepage": "https://github.com/gideonogbokiri-blip/zpay#readme"
 }
