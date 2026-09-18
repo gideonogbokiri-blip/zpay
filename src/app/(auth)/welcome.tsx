@@ -1,157 +1,170 @@
 import { Link } from 'expo-router';
-import { Image, StyleSheet, View as RNView } from 'react-native';
+import { Asset } from 'expo-asset';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEffect, useState } from 'react';
+import { Image, Platform, StyleSheet, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ZpayMark } from '@/components/ZpayMark';
-import { Button, Screen, Text, View } from '@/components/ui';
-import { Spacing } from '@/theme/tokens';
+import { Button, Screen, Text } from '@/components/ui';
+import { Spacing, TouchTarget } from '@/theme/tokens';
+
+const welcomeVideo = require('../../../assets/videos/welcome.mp4');
 
 export default function WelcomeScreen() {
+  const [showVideo, setShowVideo] = useState(false);
+  const [webVideoSrc, setWebVideoSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    setShowVideo(true);
+  }, []);
+
+  const isWeb = Platform.OS === 'web';
+
+  // On web, resolve the bundled mp4 to its real, served URL string (browsers
+  // need a URL, not a Metro module id, in <video src>). Cache-buster forces a
+  // fresh fetch past any stale service-worker/cache from the old build.
+  useEffect(() => {
+    if (!isWeb) return;
+    Asset.fromModule(welcomeVideo)
+      .downloadAsync()
+      .then((a) => setWebVideoSrc(`${a.localUri ?? a.uri}?v=2`))
+      .catch(() => {
+        const u = Asset.fromModule(welcomeVideo).uri;
+        if (u) setWebVideoSrc(`${u}?v=2`);
+      });
+  }, [isWeb]);
+
+  const player = useVideoPlayer(welcomeVideo, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+
+  const renderVideo = (style: object) => {
+    if (isWeb) {
+      // Native <video> with inline autoplay/muted/loop attrs — the only way to
+      // get reliable autoplay on web (browser autoplay-policy drops JS play()).
+      if (!webVideoSrc) return null;
+      return <video src={webVideoSrc} autoPlay muted loop playsInline style={style} key={webVideoSrc} />;
+    }
+    return <VideoView player={player} style={style} contentFit="cover" nativeControls={false} />;
+  };
+
   return (
     <Screen title={undefined} scroll={false} contentStyle={styles.content}>
-      {/* Hero section with gradient background */}
-      <RNView style={styles.heroGradient} />
+      <StatusBar style="light" />
 
-      {/* Top brand mark */}
-      <View style={styles.topBrand}>
-        <ZpayMark size={40} />
-        <Text style={styles.brandName}>ZPAY</Text>
-      </View>
+      {/* Background video layer */}
+      <View style={styles.videoLayer}>{showVideo ? renderVideo(styles.video) : null}</View>
 
-      {/* Central hero area */}
-      <View style={styles.heroArea}>
-        {/* Hero text */}
-        <View style={styles.heroText}>
-          <Text variant="display" style={styles.headline}>
-            Your Money,{`\n`}Your Way.
-          </Text>
-          <Text variant="body" color="textSecondary" style={styles.tagline}>
-            Pay bills, buy airtime and register{`\n`}for exams — all in one place.
-          </Text>
+      {/* Dark overlay for text legibility over the video */}
+      <LinearGradient
+        colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.78)']}
+        style={StyleSheet.absoluteFill}
+      />
 
-          {/* Trust badges */}
-          <View style={styles.badges}>
-            <View style={styles.badge}>
-              <Text style={styles.badgeDot}>●</Text>
-              <Text style={styles.badgeText}>Secure Payments</Text>
-            </View>
-            <View style={styles.badge}>
-              <Text style={styles.badgeDot}>●</Text>
-              <Text style={styles.badgeText}>Instant Transfer</Text>
-            </View>
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.container}>
+          <View style={styles.topBrand}>
+            <ZpayMark size={38} />
+            <Text style={styles.brandName}>ZPAY</Text>
+          </View>
+
+          {/* Tagline over the video */}
+          <Text style={styles.tagline}>Your Money,{`\n`}Your Way.</Text>
+          <Text style={styles.sub}>Pay bills, buy airtime and register{`\n`}for exams — all in one place.</Text>
+
+          <View style={styles.heroGap} />
+
+          <View style={styles.actions}>
+            <Link href="/login" asChild>
+              <Button label="Log in to your account" />
+            </Link>
+            <Link href="/signup" asChild>
+              <Button label="Create a free account" variant="secondary" />
+            </Link>
+            <Text style={styles.terms}>
+              By continuing, you agree to our <Text style={styles.termsLink}>Terms and Conditions</Text>
+            </Text>
           </View>
         </View>
-
-        {/* Professional woman image */}
-        <Image
-          source={require('../../../assets/images/woman-hero.jpg')}
-          style={styles.heroImage}
-          resizeMode="contain"
-          accessibilityLabel="Professional woman using ZPAY app"
-        />
-      </View>
-
-      {/* Accent line */}
-      <View style={styles.accentLine} />
-
-      {/* CTA Buttons */}
-      <View style={styles.actions}>
-        <Link href="/login" asChild>
-          <Button label="Log in to your account" />
-        </Link>
-        <Link href="/signup" asChild>
-          <Button label="Create a free account" variant="secondary" />
-        </Link>
-        <Text variant="caption" color="textMuted" style={styles.terms}>
-          By continuing, you agree to our Terms & Privacy Policy
-        </Text>
-      </View>
+      </SafeAreaView>
     </Screen>
   );
 }
+
+const GOLD = '#F5B82E';
+const GOLD_END = '#D99614';
 
 const styles = StyleSheet.create({
   content: {
     flex: 1,
     position: 'relative',
   },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0a0f14',
+  videoLayer: {
+    ...StyleSheet.absoluteFill,
+    overflow: 'hidden',
+  },
+  video: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  safe: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingTop: Spacing.xxl,
   },
   topBrand: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    paddingTop: Spacing.xxl,
     paddingHorizontal: Spacing.xxl,
   },
   brandName: {
     fontSize: 22,
     fontWeight: '800',
     letterSpacing: 3,
-    color: '#ffffff',
+    color: '#FFFFFF',
   },
-  heroArea: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+  tagline: {
+    fontSize: 34,
+    fontWeight: '800',
+    lineHeight: 42,
+    letterSpacing: -0.5,
+    color: '#FFFFFF',
     paddingHorizontal: Spacing.xxl,
     paddingTop: Spacing.lg,
   },
-  heroText: {
+  sub: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.75)',
+    paddingHorizontal: Spacing.xxl,
+    paddingTop: Spacing.sm,
+  },
+  heroGap: {
     flex: 1,
-    paddingBottom: Spacing.xl,
-    gap: Spacing.md,
-  },
-  headline: {
-    color: '#ffffff',
-    fontSize: 32,
-    fontWeight: '800',
-    lineHeight: 40,
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    lineHeight: 22,
-    fontSize: 13,
-    color: '#8b9aab',
-  },
-  badges: {
-    gap: Spacing.xs,
-    marginTop: Spacing.xs,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  badgeDot: {
-    color: '#00e5ff',
-    fontSize: 8,
-  },
-  badgeText: {
-    fontSize: 12,
-    color: '#8b9aab',
-    fontWeight: '500',
-  },
-  heroImage: {
-    width: 170,
-    height: 230,
-    marginBottom: -4,
-  },
-  accentLine: {
-    height: 1,
-    backgroundColor: 'rgba(0, 229, 255, 0.15)',
-    marginHorizontal: Spacing.xxl,
-    marginBottom: Spacing.xxl,
   },
   actions: {
     gap: Spacing.md,
     paddingHorizontal: Spacing.xxl,
-    paddingBottom: Spacing.xxxl,
+    paddingBottom: Spacing.xxl,
   },
   terms: {
     textAlign: 'center',
     marginTop: Spacing.xs,
-    fontSize: 11,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.65)',
+  },
+  termsLink: {
+    color: GOLD,
+    textDecorationLine: 'underline',
   },
 });

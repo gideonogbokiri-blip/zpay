@@ -45,7 +45,8 @@
         {
           "faceIDPermission": "Allow ZPAY to use Face ID to protect your wallet and approve secure actions."
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,

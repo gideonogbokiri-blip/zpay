@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zpay - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .video-background {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.7));
+            z-index: -1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(16px, 3vh, 28px);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+        }
+
+        .title {
+            font-size: clamp(30px, 7vw, 48px);
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 25px rgba(0, 0, 0, 0.7);
+            line-height: 1.2;
+        }
+
+        .title span {
+            background: linear-gradient(90deg, #f5e27a, #f5b82e, #d99614);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .tagline {
+            font-size: clamp(12px, 2.6vw, 15px);
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.75);
+        }
+
+        .btn {
+            width: min(100%, 300px);
+            padding: 15px 60px;
+            font-size: clamp(15px, 3vw, 18px);
+            font-weight: 600;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            opacity: 0.92;
+        }
+
+        .btn-login {
+            background: linear-gradient(90deg, #f5b82e, #d99614);
+            box-shadow: 0 4px 18px rgba(245, 184, 46, 0.4);
+        }
+
+        .btn-create {
+            background: linear-gradient(90deg, #1f2733, #0d141c);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .terms {
+            margin-top: 4px;
+            color: rgba(255, 255, 255, 0.65);
+            font-size: clamp(11px, 2.4vw, 13px);
+            font-style: italic;
+        }
+
+        .terms a {
+            color: #f5b82e;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .terms a:hover {
+            color: #ffdf8a;
+        }
+    </style>
+</head>
+<body>
+    <video class="video-background" autoplay muted loop playsinline>
+        <source src="vid.mp4" type="video/mp4">
+    </video>
+    <div class="overlay"></div>
+    <div class="container">
+        <h1 class="title">Welcome to <span>Zpay</span></h1>
+        <p class="tagline">Money, Simplified</p>
+        <button class="btn btn-login">Login</button>
+        <button class="btn btn-create">Create Account</button>
+        <p class="terms">By continuing, you agree to our <a href="#">Terms and Conditions</a></p>
+    </div>
+</body>
+</html>
